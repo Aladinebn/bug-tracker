@@ -18,4 +18,14 @@ pipeline {
             }
         }
     }
+    stage('Unit Test - Frontend') {
+        agent {
+            docker { image 'node:20-alpine' }
+        }
+        steps {
+            dir('bugtracker-frontend') {
+                sh 'npm install'
+                sh 'npm test'
+            }
+        }
 }
