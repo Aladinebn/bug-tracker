@@ -1,44 +1,71 @@
 pipeline {
     agent any
+
     stages {
+
         stage('Unit Test - Backend') {
             agent {
-                docker { image 'snakee/golang-junit:1.21' }
-                reuseNode true
+                docker {
+                    image 'snakee/golang-junit:1.21'
+                    reuseNode true
+                }
             }
+
             environment {
+                HOME = "${WORKSPACE}"
                 GOCACHE = "${WORKSPACE}/.cache/go-build"
-                GOPATH  = "${WORKSPACE}/.cache/go-path"
-                HOME    = "${WORKSPACE}"
+                GOPATH = "${WORKSPACE}/.cache/go-path"
             }
+
             steps {
                 dir('bugtracker-backend') {
-                   sh '''
-                    mkdir -p "$GOCACHE"
-                    mkdir -p "$GOPATH"
+                    sh '''
+                        mkdir -p "$GOCACHE"
+                        mkdir -p "$GOPATH"
 
-                    go test -v ./...
+                        go version
+                        go test -v ./...
                     '''
                 }
             }
         }
-    
-    stage('Unit Test - Frontend') {
-        agent {
-            docker { image 'node:20-alpine' }
-            reuseNode true
-        }
-        steps {
-            dir('bugtracker-frontend') {
-                sh 'npm install'
-                sh 'npm test'
+
+        stage('Unit Test - Frontend') {
+            agent {
+                docker {
+                    image 'node:20-alpine'
+                    reuseNode true
+                }
+            }
+
+            steps {
+                dir('bugtracker-frontend') {
+                    sh '''
+                        npm install
+                        npm test
+                    '''
+                }
+            }
+
+            post {
+                always {
+                    junit allowEmptyResults: true, testResults: 'bugtracker-frontend/test-results.xml'
+                }
             }
         }
-        post {
-            always {
-                junit 'bugtracker-frontend/test-results.xml'
-            }
     }
-    }
+
+    post {
+        always {
+            echo 'Pipeline terminé.'
+        }
+
+        success {
+            echo 'Tous les tests sont passés avec succès.'
+        }
+
+        failure {
+            echo 'Le pipeline a échoué.'
+        }
     }
 }
