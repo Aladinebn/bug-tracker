@@ -24,8 +24,13 @@ pipeline {
                         mkdir -p "$GOPATH"
 
                         go version
-                        go test -v ./...
+                        go test -v ./... 2>&1 | go-junit-report > test-results.xml
                     '''
+                }
+            }
+            post {
+                always {
+                    junit allowEmptyResults: true, testResults: 'bugtracker-backend/test-results.xml'
                 }
             }
         }

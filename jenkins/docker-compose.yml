@@ -19,12 +19,15 @@ services:
   my-jenkins:
     image: my-jenkins
     container_name: my-jenkins
-    restart: unless-stopped
+    restart: on-failure
     environment:
+      - DOCKER_HOST=tcp://docker:2376
+      - DOCKER_CERT_PATH=/certs/client
+      - DOCKER_TLS_VERIFY=1
       - JAVA_OPTS=-Dhudson.model.DirectoryBrowserSupport.CSP="default-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';"
     volumes:
       - jenkins-data:/var/jenkins_home
-      - /var/run/docker.sock:/var/run/docker.sock
+      - jenkins-docker-certs:/certs/client:ro
     ports:
       - "9000:8080"
       - "50000:50000"
@@ -36,4 +39,5 @@ networks:
     driver: bridge
 
 volumes:
+  jenkins-docker-certs:
   jenkins-data:
