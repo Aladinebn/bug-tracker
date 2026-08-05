@@ -11,26 +11,30 @@ pipeline {
                 }
             }
 
-            environment {
-                HOME = "${WORKSPACE}"
-                GOCACHE = "${WORKSPACE}/.cache/go-build"
-                GOPATH = "${WORKSPACE}/.cache/go-path"
-            }
-
             steps {
                 dir('bugtracker-backend') {
                     sh '''
-                        mkdir -p "$GOCACHE"
-                        mkdir -p "$GOPATH"
-
-                        go version
                         go test -v ./... 2>&1 | go-junit-report > test-results.xml
+                        #generate coverage report
+                        go test -coverprofile=coverage.out -covermode=atomic ./...
+                        go tool cover -html=coverage.out -o coverage.html
+
+                        mkdir -p test-results
+                        mv test-results.xml test-results/
                     '''
                 }
             }
             post {
                 always {
                     junit allowEmptyResults: true, testResults: 'bugtracker-backend/test-results.xml'
+                    publishHTML(target: [
+                        allowMissing: false,
+                        alwaysLinkToLastBuild: true,
+                        keepAll: true,
+                        reportDir: 'bugtracker-backend/reports',
+                        reportFiles: 'coverage.html',
+                        reportName: 'Backend Coverage Report'
+                    ])
                 }
             }
         }
@@ -55,6 +59,14 @@ pipeline {
             post {
                 always {
                     junit allowEmptyResults: true, testResults: 'bugtracker-frontend/test-results.xml'
+                    publishHTML(target: [
+                        allowMissing: false,
+                        alwaysLinkToLastBuild: true,
+                        keepAll: true,
+                        reportDir: 'bugtracker-frontend/reports',
+                        reportFiles: 'coverage.html',
+                        reportName: 'Frontend Coverage Report'
+                    ])
                 }
             }
         }
