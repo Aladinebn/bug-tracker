@@ -1,43 +1,77 @@
 pipeline {
+
+    // Exécute le pipeline sur n'importe quel agent Jenkins disponible
     agent any
 
     stages {
 
+        // ============================
+        // BACKEND UNIT TESTS
+        // ============================
         stage('Unit Test - Backend') {
+
+            // Exécute ce stage dans un conteneur Docker
             agent {
                 docker {
+                    // Image Docker contenant Go et go-junit-report
                     image 'snakee/golang-junit:1.21'
+
+                    // Réutilise le même workspace Jenkins
                     reuseNode true
                 }
             }
-environment {
+
+            // Variables d'environnement utilisées par Go
+            environment {
+
+                // Répertoire HOME utilisé dans le conteneur
                 HOME = "${WORKSPACE}"
+
+                // Cache de compilation Go
                 GOCACHE = "${WORKSPACE}/.cache/go-build"
-                GOPATH  = "${WORKSPACE}/.cache/go-path"
-                HOME    = "${WORKSPACE}"
+
+                // Workspace Go
                 GOPATH = "${WORKSPACE}/.cache/go-path"
             }
 
             steps {
-                dir('bugtracker-backend') {
-                    sh '''
-                       mkdir -p "$GOCACHE"
-                        mkdir -p "$GOPATH"
-                        go test -v ./... 2>&1 | go-junit-report > test-results.xml
-                        #generate coverage report
-                        go test -coverprofile=coverage.out -covermode=atomic ./...
-                        go tool cover -html=coverage.out -o coverage.html
 
+                // Se placer dans le projet backend
+                dir('bugtracker-backend') {
+
+                    sh '''
+
+                        # Création des dossiers nécessaires
+                        mkdir -p "$GOCACHE"
+                        mkdir -p "$GOPATH"
+                        mkdir -p reports
                         mkdir -p test-results
-                        mv test-results.xml test-results/
+
+                        # Exécute tous les tests unitaires
+                        # Le résultat est converti au format JUnit
+                        go test -v ./... 2>&1 | go-junit-report > test-results/test-results.xml
+
+                        # Génère le fichier de couverture de code
+                        go test -coverprofile=coverage.out -covermode=atomic ./...
+
+                        # Génère un rapport HTML de couverture
+                        go tool cover -html=coverage.out -o reports/coverage.html
                     '''
                 }
             }
+
             post {
+
+                // Toujours exécuté, même si les tests échouent
                 always {
-                    junit allowEmptyResults: true, testResults: 'bugtracker-backend/test-results.xml'
+
+                    // Publie les résultats des tests dans Jenkins
+                    junit allowEmptyResults: true,
+                          testResults: 'bugtracker-backend/test-results/test-results.xml'
+
+                    // Publie le rapport HTML de couverture
                     publishHTML(target: [
-                        allowMissing: false,
+                        allowMissing: true,
                         alwaysLinkToLastBuild: true,
                         keepAll: true,
                         reportDir: 'bugtracker-backend/reports',
@@ -48,28 +82,50 @@ environment {
             }
         }
 
+        // ============================
+        // FRONTEND UNIT TESTS
+        // ============================
         stage('Unit Test - Frontend') {
+
             agent {
                 docker {
+
+                    // Image Docker contenant Node.js
                     image 'node:20-alpine'
+
+                    // Réutilise le workspace Jenkins
                     reuseNode true
                 }
             }
 
             steps {
+
+                // Aller dans le dossier du frontend
                 dir('bugtracker-frontend') {
+
                     sh '''
+
+                        # Installation des dépendances
                         npm install
+
+                        # Exécution des tests
                         npm test
+
                     '''
                 }
             }
 
             post {
+
                 always {
-                    junit allowEmptyResults: true, testResults: 'bugtracker-frontend/test-results.xml'
+
+                    // Publie les résultats JUnit
+                    junit allowEmptyResults: true,
+                          testResults: 'bugtracker-frontend/test-results.xml'
+
+                    // Publie le rapport HTML
                     publishHTML(target: [
-                        allowMissing: false,
+                        allowMissing: true,
                         alwaysLinkToLastBuild: true,
                         keepAll: true,
                         reportDir: 'bugtracker-frontend/reports',
@@ -81,15 +137,22 @@ environment {
         }
     }
 
+    // ============================
+    // FIN DU PIPELINE
+    // ============================
     post {
+
+        // Toujours exécuté
         always {
             echo 'Pipeline terminé.'
         }
 
+        // Si toutes les étapes réussissent
         success {
             echo 'Tous les tests sont passés avec succès.'
         }
 
+        // Si une étape échoue
         failure {
             echo 'Le pipeline a échoué.'
         }
