@@ -106,11 +106,14 @@ pipeline {
                     sh '''
 
                         # Installation des dépendances
-                        npm install
+                        npm ci
 
                         # Exécution des tests
                         npm test
 
+                        # Génération du rapport de couverture
+                        mkdir -p reports
+                        mv coverage reports/
                     '''
                 }
             }
@@ -128,8 +131,8 @@ pipeline {
                         allowMissing: true,
                         alwaysLinkToLastBuild: true,
                         keepAll: true,
-                        reportDir: 'bugtracker-frontend/reports',
-                        reportFiles: 'coverage.html',
+                        reportDir: 'bugtracker-frontend/reports/coverage',
+                        reportFiles: 'index.html',
                         reportName: 'Frontend Coverage Report'
                     ])
                 }
