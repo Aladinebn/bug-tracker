@@ -4,7 +4,10 @@ pipeline {
     agent any
 
     stages {
-
+stage('Running Unit Tests'){
+    parallel {
+       
+   
         // ============================
         // BACKEND UNIT TESTS
         // ============================
@@ -123,7 +126,7 @@ pipeline {
                 always {
 
                     // Publie les résultats JUnit
-                    junit allowEmptyResults: true,
+                         junit allowEmptyResults: true,
                           testResults: 'bugtracker-frontend/test-results.xml'
 
                     // Publie le rapport HTML
@@ -139,7 +142,8 @@ pipeline {
             }
         }
     }
-
+ }
+}
     // ============================
     // FIN DU PIPELINE
     // ============================
