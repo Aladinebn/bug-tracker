@@ -111,7 +111,7 @@ pipeline {
              stage('Launch Application') {
                 agent {
                     docker {
-                        image 'docker:27.12.1'
+                        image 'docker:20.10.24-dind'
                         reuseNode true
                         // Montre le socket Docker pour permettre l'exécution de Docker à l'intérieur du conteneur
                         args '-v /var/run/docker.sock:/var/run/docker.sock' 
