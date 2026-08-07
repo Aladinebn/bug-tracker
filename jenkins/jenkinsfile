@@ -133,7 +133,7 @@ pipeline {
 
             agent {
                 docker {
-                    image 'docker:27-cli'
+                    image 'docker:28-cli'
                     reuseNode true
 
                     // Permet au conteneur d'utiliser Docker de l'hôte
