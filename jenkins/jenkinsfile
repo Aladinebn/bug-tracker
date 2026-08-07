@@ -1,17 +1,20 @@
 pipeline {
 
-    // Exécute le pipeline sur n'importe quel agent Jenkins disponible
+    // Exécute le pipeline sur n'importe quel agent Jenkins
     agent any
 
     stages {
 
-        // Exécute les tests Backend et Frontend en parallèle
+        // ============================================================
+        // Exécuter les tests Backend et Frontend en parallèle
+        // ============================================================
         stage('Running Unit Tests') {
+
             parallel {
 
-                // ============================
-                // BACKEND UNIT TESTS
-                // ============================
+                // ====================================================
+                // BACKEND
+                // ====================================================
                 stage('Unit Test - Backend') {
 
                     agent {
@@ -28,19 +31,24 @@ pipeline {
                     }
 
                     steps {
+
                         dir('bugtracker-backend') {
 
                             sh '''
-                                # Création des dossiers nécessaires
+                                # Création des répertoires
                                 mkdir -p "$GOCACHE"
                                 mkdir -p "$GOPATH"
                                 mkdir -p reports
                                 mkdir -p test-results
 
-                                # Exécution des tests et génération du rapport JUnit
-                                go test -v ./... 2>&1 | go-junit-report > test-results/test-results.xml
+                                echo "Running Backend Unit Tests..."
 
-                                # Génération du rapport de couverture
+                                # Génération du rapport JUnit
+                                go test -v ./... | go-junit-report > test-results/test-results.xml
+
+                                echo "Generating Coverage..."
+
+                                # Génération de la couverture
                                 go test -coverprofile=coverage.out -covermode=atomic ./...
 
                                 # Génération du rapport HTML
@@ -50,9 +58,11 @@ pipeline {
                     }
 
                     post {
+
                         always {
-                           junit allowEmptyResults: true,
-      testResults: 'bugtracker-backend/test-results/test-results.xml'
+
+                            junit allowEmptyResults: true,
+                                  testResults: 'bugtracker-backend/test-results/test-results.xml'
 
                             publishHTML(target: [
                                 allowMissing: true,
@@ -66,9 +76,9 @@ pipeline {
                     }
                 }
 
-                // ============================
-                // FRONTEND UNIT TESTS
-                // ============================
+                // ====================================================
+                // FRONTEND
+                // ====================================================
                 stage('Unit Test - Frontend') {
 
                     agent {
@@ -79,19 +89,23 @@ pipeline {
                     }
 
                     steps {
+
                         dir('bugtracker-frontend') {
 
                             sh '''
-                                # Installation des dépendances
+                                echo "Installing dependencies..."
+
                                 npm ci
 
-                                # Exécution des tests
+                                echo "Running Frontend Unit Tests..."
+
                                 npm test
                             '''
                         }
                     }
 
                     post {
+
                         always {
 
                             junit allowEmptyResults: false,
@@ -108,48 +122,69 @@ pipeline {
                         }
                     }
                 }
-           
-            }   
-             stage('Launch Application') {
-    agent {
-        docker {
-            image 'docker:27.5.1-cli'
-            reuseNode true
-            args '-v /var/run/docker.sock:/var/run/docker.sock'
+            }
+        }
+
+        // ============================================================
+        // Lancement de l'application
+        // Cette étape ne s'exécute que si tous les tests réussissent
+        // ============================================================
+        stage('Launch Application') {
+
+            agent {
+                docker {
+                    image 'docker:27-cli'
+                    reuseNode true
+
+                    // Permet au conteneur d'utiliser Docker de l'hôte
+                    args '-v /var/run/docker.sock:/var/run/docker.sock'
+                }
+            }
+
+            steps {
+
+                sh '''
+                    echo "========== Docker Version =========="
+                    docker version
+
+                    echo "========== Docker Compose Version =========="
+                    docker compose version
+
+                    echo "Stopping previous containers..."
+
+                    docker compose down || true
+
+                    echo "Starting application..."
+
+                    docker compose up --build -d
+
+                    echo "Application started successfully."
+                '''
+            }
         }
     }
 
-    steps {
-        sh '''
-            echo "Docker version"
-            docker version
-
-            echo "Docker Compose version"
-            docker compose version
-
-            docker compose down || true
-            docker compose up --build -d
-        '''
-    }
-}        
-        }
-    }
-
-    // ============================
-    // FIN DU PIPELINE
-    // ============================
+    // ============================================================
+    // Actions exécutées à la fin du pipeline
+    // ============================================================
     post {
 
         always {
+
             cleanWs()
+
             echo 'Pipeline terminé.'
         }
 
         success {
-            echo 'Tous les tests sont passés avec succès.'
+
+            echo 'Tous les tests sont passés.'
+
+            echo 'Application lancée avec succès.'
         }
 
         failure {
+
             echo 'Le pipeline a échoué.'
         }
     }
