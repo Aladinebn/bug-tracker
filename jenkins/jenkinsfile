@@ -25,6 +25,9 @@ pipeline {
                     }
 
                     environment {
+                        // HOME pointe vers le workspace pour éviter les
+                        // problèmes de permission d'écriture (l'utilisateur
+                        // du conteneur n'a pas de $HOME par défaut)
                         HOME = "${WORKSPACE}"
                         GOCACHE = "${WORKSPACE}/.cache/go-build"
                         GOPATH = "${WORKSPACE}/.cache/go-path"
@@ -135,15 +138,38 @@ pipeline {
                 docker {
                     image 'docker:28-cli'
                     reuseNode true
+
+                    // -v .../docker.sock : monte le socket Docker de l'hôte
+                    // pour que le conteneur docker:28-cli puisse piloter
+                    // le daemon Docker de la machine hôte (Docker-in-Docker
+                    // "par socket partagé")
+                    //
+                    // --group-add 2375 : le socket appartient au groupe
+                    // "docker" (GID 2375) sur l'hôte. L'utilisateur du
+                    // conteneur (UID 1000, non-root) n'a pas ce groupe par
+                    // défaut -> "permission denied" sans cette option.
+                    // Le GID a été trouvé avec :
+                    //   docker exec -it jenkins-docker getent group docker
                     args '-v /var/run/docker.sock:/var/run/docker.sock --group-add 2375'
                 }
             }
             environment {
+                // HOME redéfini vers le workspace : sans ça, le client
+                // Docker/Compose essaie d'écrire sa config dans "/" (le
+                // HOME par défaut du conteneur), ce qui donne
+                // "mkdir /.docker: permission denied"
                 HOME = "${WORKSPACE}"
+
+                // Emplacement explicite du fichier de config Docker CLI
+                // (config.json), placé dans un dossier où l'utilisateur
+                // a les droits d'écriture
                 DOCKER_CONFIG = "${WORKSPACE}/.docker"
             }
             steps {
                 sh '''
+                # Créé le dossier de config Docker AVANT toute commande
+                # docker/docker compose, sinon Docker tente de le créer
+                # lui-même au mauvais endroit et échoue
                 mkdir -p "$DOCKER_CONFIG"
 
                 echo "========== Docker Version =========="
@@ -154,6 +180,8 @@ pipeline {
 
                 echo "Stopping previous containers..."
 
+                # "|| true" : ne fait pas échouer le pipeline si aucun
+                # conteneur n'existait encore (premier lancement)
                 docker compose down || true
 
                 echo "Starting application..."
@@ -162,6 +190,25 @@ pipeline {
 
                 echo "Application started successfully."
                 '''
+            }
+        }
+        stage('API Tests') {
+            agent {
+                docker {
+                    image 'mcr.microsoft.com/playwright:v1.50.0-jammy'
+                    reuseNode true
+                    args '-u 0 --network host'  // Exécuter en tant que root et utiliser le réseau de l'hôte
+                }
+            }
+            steps {
+              dir('tests-api'){
+                sh '''
+                npx wait-port 8080 http://localhost:8080 --timeout=30000
+                echo "Running API Tests..."
+                npm ci
+                npx playwright test 
+                '''
+              }
             }
         }
     }
