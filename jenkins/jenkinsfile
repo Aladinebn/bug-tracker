@@ -132,31 +132,35 @@ pipeline {
         stage('Launch Application') {
 
             agent {
-    docker {
-        image 'docker:28-cli'
-        reuseNode true
-        args '-v /var/run/docker.sock:/var/run/docker.sock --group-add 2375'
-    }
-}
-
+                docker {
+                    image 'docker:28-cli'
+                    reuseNode true
+                    args '-v /var/run/docker.sock:/var/run/docker.sock --group-add 2375'
+                }
+            }
+            environment {
+                HOME = "${WORKSPACE}"
+                DOCKER_CONFIG = "${WORKSPACE}/.docker"
+            }
             steps {
-
                 sh '''
-                    echo "========== Docker Version =========="
-                    docker version
+                mkdir -p "$DOCKER_CONFIG"
 
-                    echo "========== Docker Compose Version =========="
-                    docker compose version
+                echo "========== Docker Version =========="
+                docker version
 
-                    echo "Stopping previous containers..."
+                echo "========== Docker Compose Version =========="
+                docker compose version
 
-                    docker compose down || true
+                echo "Stopping previous containers..."
 
-                    echo "Starting application..."
+                docker compose down || true
 
-                    docker compose up --build -d
+                echo "Starting application..."
 
-                    echo "Application started successfully."
+                docker compose up --build -d
+
+                echo "Application started successfully."
                 '''
             }
         }
