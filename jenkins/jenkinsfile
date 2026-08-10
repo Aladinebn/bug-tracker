@@ -210,6 +210,22 @@ pipeline {
                 '''
               }
             }
+            post {
+                    always {
+                        junit allowEmptyResults: false,
+                              testResults:'tests-api/test-results/results.xml'
+                        
+                        publishHTML(target: [
+                            allowMissing: false,
+                            alwaysLinkToLastBuild: true,
+                            keepAll: true,
+                            reportDir: 'tests-api/playwright-report',
+                            reportFiles: 'index.html',
+                            reportName: 'Playwright API Test Report'
+                        ])
+                        }
+                    }
+                }
         }
     }
 
