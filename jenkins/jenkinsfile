@@ -224,8 +224,7 @@ pipeline {
                             reportName: 'Playwright API Test Report'
                         ])
                         }
-                    }
-                }
+            }
         }
     }
 
