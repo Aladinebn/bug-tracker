@@ -136,7 +136,6 @@ pipeline {
                     steps {
                       dir('tests-e2e'){
                         sh '''
-                        npx wait-port 8080 http://localhost:8080 --timeout=30000
                         echo "Running E2E Tests..."
                         npm ci
                         npx playwright test 
