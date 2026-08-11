@@ -237,9 +237,15 @@ pipeline {
                     steps {
                       dir('tests-e2e'){
                         sh '''
-                        echo "Running E2E Tests..."
                         npm ci
-                        npx playwright test 
+
+                echo "Waiting for backend..."
+
+                npx wait-port 8080 --timeout=30000
+
+                echo "Backend is ready."
+
+                npx playwright test
                         '''
                       }
                     }
