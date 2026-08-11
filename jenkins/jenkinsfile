@@ -125,6 +125,40 @@ pipeline {
                         }
                     }
                 }
+                stage('Tests E2E') {
+                    agent {
+                        docker {
+                            image 'mcr.microsoft.com/playwright:v1.50.0-jammy'
+                            reuseNode true
+                            args '-u 0 --network host'  // Exécuter en tant que root et utiliser le réseau de l'hôte
+                        }
+                    }
+                    steps {
+                      dir('tests-e2e'){
+                        sh '''
+                        npx wait-port 8080 http://localhost:8080 --timeout=30000
+                        echo "Running E2E Tests..."
+                        npm ci
+                        npx playwright test 
+                        '''
+                      }
+                    }
+                    post {
+                            always {
+                                junit allowEmptyResults: false,
+                                      testResults:'tests-e2e/test-results/results.xml'
+                                
+                                publishHTML(target: [
+                                    allowMissing: false,
+                                    alwaysLinkToLastBuild: true,
+                                    keepAll: true,
+                                    reportDir: 'tests-e2e/playwright-report',
+                                    reportFiles: 'index.html',
+                                    reportName: 'Playwright E2E Test Report'
+                                ])
+                                }
+                    }
+                }
             }
         }
 
