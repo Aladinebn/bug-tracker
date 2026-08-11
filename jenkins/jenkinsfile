@@ -195,7 +195,7 @@ pipeline {
         stage('API Tests') {
             agent {
                 docker {
-                    image 'mcr.microsoft.com/playwright:v1.50.0-jammy'
+                    image 'mcr.microsoft.com/playwright:v1.62.0-jammy'
                     reuseNode true
                     args '-u 0 --network host'  // Exécuter en tant que root et utiliser le réseau de l'hôte
                 }
@@ -229,7 +229,7 @@ pipeline {
          stage('Tests E2E') {
                     agent {
                         docker {
-                            image 'mcr.microsoft.com/playwright:v1.50.0-jammy'
+                            image 'mcr.microsoft.com/playwright:v1.62.0-jammy'
                             reuseNode true
                             args '-u 0 --network host'  // Exécuter en tant que root et utiliser le réseau de l'hôte
                         }
