@@ -19,10 +19,21 @@ jobs:
           go-version: "stable"
           cache-dependency-path: bugtracker-backend/go.sum
 
+      - name: Install go-junit-report
+        run: go install github.com/jstemmer/go-junit-report@latest
+
       - name: Execute Unit Tests
         working-directory: ./bugtracker-backend
         run: |
-          go test ./... -v
+          go test -v ./... 2>&1 | go-junit-report > test-results/test-results.xml
+
+      - name: Publish Backend Test Results
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: Backend Unit Tests Results
+          path: bugtracker-backend/test-results/test-results.xml
+          reporter: jest-junit
 
   unit-tests-frontend:
     needs: unit-tests-backend
