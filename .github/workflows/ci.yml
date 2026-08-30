@@ -126,5 +126,5 @@ jobs:
 >>>>>>> 7833d89 (launch application)
       - name: Launch application
         run: |
-          docker-compose up --build -d
-          npx wait-on http://localhost:8080/api/health --timeout 30000
+          docker compose up --build -d
+          npx wait-port http://localhost:8080/api/health --timeout 30000
