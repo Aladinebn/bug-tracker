@@ -145,7 +145,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: API Tests Playwright Results
-          path: ./tests-api/playwright-report/
+          path: ./tests-api/playwright-report
           retention-days: 5
 
       - name: Upload E2E Test Results
@@ -153,7 +153,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: E2E Tests Results
-          path: ./tests-e2e/test-results/
+          path: ./tests-e2e/test-results
           retention-days: 5
 
       - name: Upload E2E Test Playwright Report
@@ -161,7 +161,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: E2E Tests Playwright Results
-          path: ./tests-e2e/playwright-report/
+          path: ./tests-e2e/playwright-report
           retention-days: 5
 
       - name: Publish E2E Test Results
