@@ -132,7 +132,15 @@ jobs:
       - name: Stop application
         run: docker compose down
 
-      - name: Upload API Test Playwright Results
+      - name: Upload API Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: API Tests Results
+          path: ./tests-api/test-results/
+          retention-days: 5
+
+      - name: Upload API Test Playwright Report
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -140,15 +148,15 @@ jobs:
           path: ./tests-api/playwright-report/
           retention-days: 5
 
-      - name: Publish API Test Results
-        uses: dorny/test-reporter@v1
+      - name: Upload E2E Test Results
         if: always()
+        uses: actions/upload-artifact@v4
         with:
-          name: API Tests Report
-          path: ./tests-api/test-results/*.xml
-          reporter: jest-junit
+          name: E2E Tests Results
+          path: ./tests-e2e/test-results/
+          retention-days: 5
 
-      - name: Upload E2E Test Playwright Results
+      - name: Upload E2E Test Playwright Report
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -161,5 +169,13 @@ jobs:
         if: always()
         with:
           name: E2E Tests Report
-          path: ./tests-e2e/test-results/*.xml
+          path: ./tests-e2e/test-results/results.xml
+          reporter: jest-junit
+
+      - name: Publish API Test Results
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: API Tests Report
+          path: ./tests-api/test-results/*.xml
           reporter: jest-junit
