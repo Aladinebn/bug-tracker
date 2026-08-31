@@ -129,6 +129,12 @@ jobs:
           npm ci
           npx playwright test
 
+      - name: Run E2E tests
+        working-directory: ./tests-e2e
+        run: |
+          npm ci
+          npx playwright test
+
       - name: Upload API Test Results
         if: always()
         uses: actions/upload-artifact@v4
