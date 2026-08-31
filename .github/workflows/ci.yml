@@ -129,9 +129,6 @@ jobs:
           npm ci
           npx playwright test
 
-      - name: Stop application
-        run: docker compose down
-
       - name: Upload API Test Results
         if: always()
         uses: actions/upload-artifact@v4
@@ -169,7 +166,7 @@ jobs:
         if: always()
         with:
           name: E2E Tests Report
-          path: ./tests-e2e/test-results/results.xml
+          path: ./tests-e2e/test-results/*.xml
           reporter: jest-junit
 
       - name: Publish API Test Results
@@ -179,3 +176,6 @@ jobs:
           name: API Tests Report
           path: ./tests-api/test-results/*.xml
           reporter: jest-junit
+
+      - name: Stop application
+        run: docker compose down
